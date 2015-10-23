@@ -1,7 +1,7 @@
 # AssemblyLanguage
 Pacman
 
-Npo Ghosts
+No Ghosts
 
 "blinky yellow" -thanks duresh
 
