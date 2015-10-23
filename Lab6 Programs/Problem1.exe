@@ -1,0 +1,31 @@
+TITLE Lab6,Filling an Array, Mallory Harper, 10/26/2015					(main.asm)
+
+INCLUDE Irvine32.inc
+.data
+	n db 0
+	array1 db n dup(?)
+	nvalstring db "Enter an array length: ", 0
+
+
+.code
+main PROC
+	call inputnum
+
+	
+exit
+main ENDP
+
+inputnum PROC
+	mov edx, offset nvalstring
+	call writestring
+	call readint
+	mov n, eax
+	mov eax, lengthof array1
+	call writeint
+	
+
+ret
+inputnum ENDP
+
+
+END main
