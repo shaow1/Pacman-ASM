@@ -1,12 +1,19 @@
 # AssemblyLanguage
-pacman
-ghostd nono
-blinky yellow
+Pacman
+
+Npo Ghosts
+
+"blinky yellow" -thanks duresh
+
 dots eat dots
 
-levelArray = 2d array of walls and pacman and dots
-curPos = where pacman is
+Notes:
+2s arrays (have to figure that out but im assuming it would work as a single array you access as <1stindex>*<lenthOfEachColumn> + <2ndindex>)
 
+Psuedo-Code:
+
+	levelArray = 2d array of walls and pacman and dots
+	curPos = where pacman is
 
 	until(dots == 0){
 	
