@@ -8,7 +8,7 @@ No Ghosts
 dots eat dots
 
 Notes:
-2s arrays (have to figure that out but im assuming it would work as a single array you access as <1stindex>* <lenthOfEachColumn>  + <2ndindex>)
+2s arrays (have to figure that out but im assuming it would work as a single array you access as <1stindex>* [lenthOfEachColumn]  + <2ndindex>)
 
 Psuedo-Code:
 
