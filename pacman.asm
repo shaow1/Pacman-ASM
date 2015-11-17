@@ -33,6 +33,8 @@ BUFFER_SIZE = 5000
 	intendedX byte 2
 	intendedY byte 1
 
+	astris db 42
+
 .code
 
 main PROC
@@ -51,7 +53,6 @@ LoadGameBoardFile PROC
 	mov ecx, buffer_size
 	call ReadFromFile
 	mov boardgame[eax],0
-
 	mov eax, filehandle
 	call closefile
 
@@ -226,10 +227,42 @@ drawScreen proc
 	call Clrscr
 
 	mov edx, offset boardgame
-	call writestring
-
+	call ChangeCharacterColor
+	;call writestring
 	ret
 drawScreen endp
+
+ChangeCharacterColor proc
+mov edi,0
+mov ecx, lengthof boardgame
+
+
+printcharacters:
+	mov bl, boardgame[edi]
+	cmp bl, astris
+	je changecolor
+	jmp somewhere
+
+	changecolor:
+	mov eax, 10
+	call SetTextColor
+	mov al,bl
+	call writechar
+	jmp keepgoing
+
+	somewhere:
+	mov eax, 15
+	call SetTextColor
+	mov al, boardgame[edi]
+	call writechar
+
+	keepgoing:
+
+inc edi
+loop printcharacters
+
+ret
+ChangeCharacterColor endp
 
 readArray proc
 	;al: x, ah: y
