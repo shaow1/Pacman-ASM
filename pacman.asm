@@ -7,6 +7,8 @@ TITLE MASM Template						(main.asm)
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
 
+;---------------------------------------------------------------------------
+
 BUFFER_SIZE = (30*24)
 boardWidth = 30
 
@@ -31,6 +33,9 @@ leftKey = 19200
 
 	score byte 0
 
+;---------------------------------------------------------------------------
+;Main Game Logic & Loop
+
 .code
 
 main PROC
@@ -40,22 +45,6 @@ main PROC
 	call crlf
 	exit
 main ENDP
-
-LoadGameBoardFile PROC
-	mov edx, Offset filename
-	call openinputfile
-	mov filehandle, eax
-	mov edx, offset boardgame
-	mov ecx, buffer_size
-	call ReadFromFile
-	mov boardgame[eax],0
-
-	mov eax, filehandle
-	call closefile
-
-	ret
-LoadGameBoardFile ENDP
-
 
 gameLoop proc
 	frameStart:
@@ -80,12 +69,14 @@ gameLoop proc
 	ret
 gameLoop endp
 
+;---------------------------------------------------------------------------
+;User Input
+
 getKeyStroke proc
 	call readKey
 	jz noKeyPress	;dont store anything if no key was pressed (readkey returns 0 if no key pressed)
-	mov lastKeyPressed, ax	;key pressed, store value in variable
+		mov lastKeyPressed, ax	;key pressed, store value in variable
 	noKeyPress:
-
 	ret
 getKeyStroke endp
 
@@ -137,6 +128,9 @@ handleKey proc
 	ret
 handleKey endp
 
+;---------------------------------------------------------------------------
+;Move Pacman Around
+
 moveCharacter proc
 	;takes intended next position in intendedX, intendedY
 	mov eax, 0
@@ -173,8 +167,6 @@ moveCharacter proc
 	mov bl, 'O'
 	cmp al, bl
 	jz hole
-
-	jmp endof
 
 	free:
 		mov al, x
@@ -217,7 +209,6 @@ moveCharacter proc
 		call movePacMan
 		jmp endof
 	endof:
-	
 	ret
 moveCharacter endp
 
@@ -255,10 +246,27 @@ writeToScreen proc
 	ret
 writeToScreen endp
 
+;---------------------------------------------------------------------------
+;Gameboard Loading and Displaying
+
+LoadGameBoardFile PROC
+	mov edx, Offset filename
+	call openinputfile
+	mov filehandle, eax
+	mov edx, offset boardgame
+	mov ecx, buffer_size
+	call ReadFromFile
+	mov boardgame[eax],0
+
+	mov eax, filehandle
+	call closefile
+
+	ret
+LoadGameBoardFile ENDP
+
 drawScreen proc
 	mov edi,0
 	mov ecx, lengthof boardgame
-
 
 	printcharacters:
 		mov bl, boardgame[edi]
@@ -267,72 +275,58 @@ drawScreen proc
 		jmp somewhere
 
 		changecolor:
-		mov eax, 10
-		call SetTextColor
-		mov al,bl
-		call writechar
-		jmp keepgoing
-
+			mov eax, 10
+			call SetTextColor
+			mov al,bl
+			call writechar
+			jmp keepgoing
 		somewhere:
-		mov eax, 15
-		call SetTextColor
-		mov al, boardgame[edi]
-		call writechar
-
+			mov eax, 15
+			call SetTextColor
+			mov al, boardgame[edi]
+			call writechar
 		keepgoing:
-
 	inc edi
 	loop printcharacters
 drawScreen endp
 
+;---------------------------------------------------------------------------
+;Gameboard Array Procedures
+
 readArray proc
 	;al: x, ah: y
 	;returns value in al
-
 	mov esi, offset boardGame
-
 	mov ecx, eax
 	mov eax, 0	;use ax to store position
-
 	;determine position
 		mov al, boardWidth
 		mul ch
 		;cx = boardwidth * y
-
 		mov ch, 0	;make cx equal to cl only
 		add ax, cx	;add the x to the sum. Ax is now the offset from the begining of the array
-
 	add esi, eax; add the offset off the array to its position in the array
-
 	mov al, [esi]
-
 	ret
 readArray endp
 
 writeToArray proc
 	;al: x, ah: y
 	;bl char
-
 	mov esi, offset boardGame
-
 	mov ecx, eax
 	mov eax, 0	;use ax to store position
-
 	;determine position
 		mov al, boardWidth
 		mul ch
 		;cx = boardwidth * y
-
 		mov ch, 0	;make cx equal to cl only
 		add ax, cx	;add the x to the sum. Ax is now the offset from the begining of the array
-
 	add esi, eax; add the offset off the array to its position in the array
-
 	mov [esi], bl
-
 	ret
 writeToArray endp
 
-END main
+;---------------------------------------------------------------------------
 
-;check
+END main
