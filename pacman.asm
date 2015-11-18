@@ -6,40 +6,36 @@ TITLE MASM Template						(main.asm)
 
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
-BUFFER_SIZE = 5000
-.data
 
+BUFFER_SIZE = (30*24)
+boardWidth = 30
+
+upKey = 18432
+rightKey = 19712
+downKey = 20480
+leftKey = 19200
+
+.data
 	boardgame BYTE BUFFER_SIZE DUP(?)
 	filename  BYTE "FinalBoardGame.txt",0
 	fileHandle HANDLE ?
 
-	boardWidth byte 80
-
 	nextTick dd 0
 	lengthOfFrame dd 200
-
 	lastKeyPressed dw 19712
-
-	upKey word 18432
-	rightKey word 19712
-	downKey word 20480
-	leftKey word 19200
 
 	x byte 1
 	y byte 1
-
-	score byte 0
-
 	intendedX byte 2
 	intendedY byte 1
 
-	astris db 42
+	score byte 0
 
 .code
 
 main PROC
 	call LoadGameBoardFile
-
+	call drawscreen
 	call gameLoop
 	call crlf
 	exit
@@ -53,6 +49,7 @@ LoadGameBoardFile PROC
 	mov ecx, buffer_size
 	call ReadFromFile
 	mov boardgame[eax],0
+
 	mov eax, filehandle
 	call closefile
 
@@ -68,7 +65,6 @@ gameLoop proc
 
 		call handleKey
 		call moveCharacter
-		call drawscreen
 
 		keyboardLoop:
 			call getKeyStroke
@@ -114,12 +110,8 @@ handleKey proc
 	jz down
 
 	mov bx, leftKey
-	cmp leftKey, ax
+	cmp bx, ax
 	jz left
-
-	jmp endOf	;failsafe
-
-	
 
 	up:
 		dec ch
@@ -147,18 +139,30 @@ handleKey endp
 
 moveCharacter proc
 	;takes intended next position in intendedX, intendedY
-
 	mov eax, 0
 
 	mov al, intendedX
 	mov ah, intendedY
+
+	mov bx, 0b00h	;left tunnel pos in hex
+	cmp ax, bx
+	jz leftTunnel
+
+	mov bx, 0b1ah	;left tunnel pos in hex
+	cmp ax, bx
+	jz rightTunnel
+
 	call readarray	;reads array to determine material of next intended position. Returns char in al
+
+	;mov bx, 0b1bh	;right tunnel
+	;cmp ax, bx
+	;jz leftTunnel
 
 	mov bl, ' '
 	cmp al, bl
 	jz free
 
-	mov bl, '*'
+	mov bl, '.'
 	cmp al, bl
 	jz dot
 	
@@ -177,30 +181,41 @@ moveCharacter proc
 		mov ah, y
 		mov bl, ' '
 		call writeToArray
-
 		call movePacMan
-
 		jmp endof
 	dot:
 		mov al, x
 		mov ah, y
 		mov bl, ' '
 		call writeToArray
-
 		mov al, score
 		inc al
 		mov score, al
-
 		call movePacMan
-
 		jmp endof
 	wall:
-		;nothing
 		jmp endof
 	hole:
 		;endGame
 		jmp endof
-
+	leftTunnel:
+		mov al, x
+		mov ah, y
+		mov bl, ' '
+		call writeToArray
+		mov intendedX, 26
+		mov intendedY, 11
+		call movePacMan
+		jmp endof
+	rightTunnel:
+		mov al, x
+		mov ah, y
+		mov bl, ' '
+		call writeToArray
+		mov intendedX, 1
+		mov intendedY, 11
+		call movePacMan
+		jmp endof
 	endof:
 	
 	ret
@@ -208,6 +223,16 @@ moveCharacter endp
 
 movePacMan proc
 	;move pacmans x and y to intended x and y
+	mov dl, intendedX
+	mov dh, intendedY
+	mov al, "@"
+	call writeToScreen	;draw pacman
+
+	mov dl, x
+	mov dh, y
+	mov al, " "
+	call writeToScreen	;clear last position pacman
+
 	mov al, intendedX
 	mov ah, intendedY
 	mov x, al
@@ -222,47 +247,43 @@ movePacMan proc
 	ret
 movePacMan endp
 
-drawScreen proc
-	;draws screen
-	call Clrscr
-
-	mov edx, offset boardgame
-	call ChangeCharacterColor
-	;call writestring
+writeToScreen proc
+	;dl x, dh y
+	; al char
+	call gotoxy
+	call writeChar
 	ret
+writeToScreen endp
+
+drawScreen proc
+	mov edi,0
+	mov ecx, lengthof boardgame
+
+
+	printcharacters:
+		mov bl, boardgame[edi]
+		cmp bl, "#"
+		je changecolor
+		jmp somewhere
+
+		changecolor:
+		mov eax, 10
+		call SetTextColor
+		mov al,bl
+		call writechar
+		jmp keepgoing
+
+		somewhere:
+		mov eax, 15
+		call SetTextColor
+		mov al, boardgame[edi]
+		call writechar
+
+		keepgoing:
+
+	inc edi
+	loop printcharacters
 drawScreen endp
-
-ChangeCharacterColor proc
-mov edi,0
-mov ecx, lengthof boardgame
-
-
-printcharacters:
-	mov bl, boardgame[edi]
-	cmp bl, astris
-	je changecolor
-	jmp somewhere
-
-	changecolor:
-	mov eax, 10
-	call SetTextColor
-	mov al,bl
-	call writechar
-	jmp keepgoing
-
-	somewhere:
-	mov eax, 15
-	call SetTextColor
-	mov al, boardgame[edi]
-	call writechar
-
-	keepgoing:
-
-inc edi
-loop printcharacters
-
-ret
-ChangeCharacterColor endp
 
 readArray proc
 	;al: x, ah: y
@@ -313,3 +334,5 @@ writeToArray proc
 writeToArray endp
 
 END main
+
+;check
