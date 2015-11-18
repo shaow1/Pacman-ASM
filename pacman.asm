@@ -31,7 +31,7 @@ leftKey = 19200
 	intendedX byte 2
 	intendedY byte 1
 
-	score byte 0
+	score dd 0
 
 ;---------------------------------------------------------------------------
 ;Main Game Logic & Loop
@@ -180,9 +180,12 @@ moveCharacter proc
 		mov ah, y
 		mov bl, ' '
 		call writeToArray
-		mov al, score
-		inc al
-		mov score, al
+
+		mov eax, score
+		add eax, 100
+		mov score, eax
+		call updateScore
+
 		call movePacMan
 		jmp endof
 	wall:
@@ -247,7 +250,7 @@ writeToScreen proc
 writeToScreen endp
 
 ;---------------------------------------------------------------------------
-;Gameboard Loading and Displaying
+;Gameboard Loading, Displaying & Score
 
 LoadGameBoardFile PROC
 	mov edx, Offset filename
@@ -288,7 +291,17 @@ drawScreen proc
 		keepgoing:
 	inc edi
 	loop printcharacters
+	call updateScore
 drawScreen endp
+
+updateScore proc
+	mov dl, 0
+	mov dh, 24
+	call gotoxy
+	mov eax, score
+	call writeInt
+	ret
+updateScore endp
 
 ;---------------------------------------------------------------------------
 ;Gameboard Array Procedures
