@@ -1,4 +1,4 @@
-To Do List
+#To Do List
 - Splash Screen 
  	- Stick in front of other init functions in main proc
  	- Should be own function
