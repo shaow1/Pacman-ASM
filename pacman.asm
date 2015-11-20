@@ -31,7 +31,11 @@ leftKey = 19200
 	intendedX byte 2
 	intendedY byte 1
 
+	MessBoxTitle db "Level Complete",0
+	MessBox db "Level Complete: Do you wish to continute?",0 
+
 	score dd 0
+	
 
 ;---------------------------------------------------------------------------
 ;Main Game Logic & Loop
@@ -185,6 +189,7 @@ moveCharacter proc
 		add eax, 100
 		mov score, eax
 		call updateScore
+		call nextlevel
 
 		call movePacMan
 		jmp endof
@@ -302,6 +307,31 @@ updateScore proc
 	call writeInt
 	ret
 updateScore endp
+
+nextlevel Proc
+
+cmp score, 21300
+je printmessage
+jmp somewhere
+
+printmessage:
+	INVOKE MessageBox, NULL, ADDR Messbox,
+	ADDR MessBoxTitle, MB_YESNO + MB_ICONQUESTION
+	cmp eax,IDYES
+	je increaselevel
+	jmp somewhere
+
+increaselevel:
+	call clrscr
+	call LoadGameBoardFile
+	call drawscreen
+	call gameLoop
+
+
+somewhere:
+
+ret
+nextlevel ENDP
 
 ;---------------------------------------------------------------------------
 ;Gameboard Array Procedures
