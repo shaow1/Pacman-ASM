@@ -1,4 +1,4 @@
-Never Play Pac Man Before?
+Never Played Pac Man Before?
 No Worries! Here's some simple directions:
 
 1. Pac Man is the '@' symbol, you will move him around the board by using the

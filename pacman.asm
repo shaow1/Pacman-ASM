@@ -74,7 +74,6 @@ gameLoop proc
 		call getMSeconds
 		add eax, lengthOfFrame	;add length of frame to current time
 		mov nextTick, eax
-
 		call handleKey
 		call moveCharacter
 
@@ -89,7 +88,7 @@ gameLoop proc
 			jmp frameStart		;if length of frame has passed jump to frame start
 		;end of keyboardLoop
 
-	ret
+	;ret
 gameLoop endp
 ;-------------------------------------------------------------------------------------------
 ;Splash Screen
@@ -352,15 +351,21 @@ moveCharacter proc
 		mov score,0 ;puts score back at zero for the beginning level
 		mov level, 1
 
+		
 		call clrscr
 		call LoadGameBoardFile
 		call drawscreen
-		call gameLoop
 		call updateScore
-		ret
+	
+		jmp somewhere
 
 	endof:
-	ret
+		ret
+		
+
+	somewhere:
+		
+
 moveCharacter endp
 
 movePacMan proc
@@ -488,7 +493,7 @@ increaselevel:
 	mov score,0 ;puts score back at zero for the next level
 	inc level
 
-	call clrscr
+	call clrscr	
 	call LoadGameBoardFile
 	call drawscreen
 	call gameLoop
@@ -497,8 +502,8 @@ increaselevel:
 
 
 somewhere:
+	ret
 
-ret
 nextlevel ENDP
 
 ;---------------------------------------------------------------------------
