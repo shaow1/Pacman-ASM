@@ -66,10 +66,6 @@ leftKey = 19200
 main PROC
 	call splashscreen
 
-	;call LoadGameBoardFile
-	;call drawscreen
-	;call gameLoop
-	;call crlf
 	exit
 main ENDP
 
@@ -324,8 +320,6 @@ moveCharacter proc
 	wall:
 		jmp endof
 	hole:
-		;endGame
-		;jmp endof
 		jmp endGame
 	leftTunnel:
 		mov al, x
@@ -355,7 +349,7 @@ moveCharacter proc
 		exit
 
 	restartgame:
-		mov score,0 ;puts score back at zero for the next level
+		mov score,0 ;puts score back at zero for the beginning level
 		mov level, 1
 
 		call clrscr
@@ -455,15 +449,24 @@ updateScore proc
 	mov edx, offset scoreString
 	call WriteString
 	mov eax, score
-	call writeInt
+	call writedec
 	mov dl, 0
 	mov dh, 24
 	call gotoxy
 	mov edx, offset levelString
 	call WriteString
 	mov eax, level
-	call writeInt
+	call writedec
+	cmp eax, 7
+	je levelscomplete
 	ret
+
+	levelscomplete:
+		mov ebx,OFFSET wincaption
+		mov edx,OFFSET winnermsg
+		call MsgBox
+		exit
+		
 
 updateScore endp
 
@@ -484,22 +487,12 @@ printmessage:
 increaselevel:
 	mov score,0 ;puts score back at zero for the next level
 	inc level
+
 	call clrscr
 	call LoadGameBoardFile
 	call drawscreen
 	call gameLoop
 	call updateScore
-
-	cmp level,6
-	mov eax, level
-	call dumpregs
-	je fishedalllevels
-
-
-	fishedalllevels:
-		mov ebx,OFFSET wincaption
-		mov edx,OFFSET winnermsg
-		call MsgBox
 
 
 
