@@ -477,8 +477,8 @@ updateScore endp
 
 nextlevel Proc
 
-cmp score, 21300
-;cmp score, 300
+;cmp score, 21300
+cmp score, 600
 je printmessage
 jmp somewhere
 
@@ -499,10 +499,9 @@ increaselevel:
 	call gameLoop
 	call updateScore
 
-
-
 somewhere:
 	ret
+
 
 nextlevel ENDP
 
