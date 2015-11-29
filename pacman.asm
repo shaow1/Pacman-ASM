@@ -455,14 +455,14 @@ updateScore proc
 	mov edx, offset scoreString
 	call WriteString
 	mov eax, score
-	call writeInt
+	call writedec
 	mov dl, 0
 	mov dh, 24
 	call gotoxy
 	mov edx, offset levelString
 	call WriteString
 	mov eax, level
-	call writeInt
+	call writedec
 	ret
 
 updateScore endp
