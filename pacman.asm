@@ -330,7 +330,7 @@ endGame PROC
 	ADDR MessBoxTitle1, MB_YESNO + MB_ICONQUESTION
 	cmp eax, IDYES
 	jnz startScreen
-	restartGame:
+	restartGamee:
 		call restartGame
 		jmp endOf
 	startScreen:
