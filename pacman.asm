@@ -94,7 +94,6 @@ gameLoop endp
 ;Splash Screen
 splashscreen PROC
 
-
 	mov edx, 0
 	mov dh, yvalue
 	mov dl, xvalue
@@ -319,7 +318,7 @@ moveCharacter proc
 	wall:
 		jmp endof
 	hole:
-		jmp endGame
+		call endGame
 	leftTunnel:
 		mov al, x
 		mov ah, y
@@ -338,35 +337,42 @@ moveCharacter proc
 		mov intendedY, 11
 		call movePacMan
 		jmp endof
-	endgame:
-		INVOKE MessageBox, NULL, ADDR Messbox1,
-		ADDR MessBoxTitle1, MB_YESNO + MB_ICONQUESTION
-		cmp eax,IDYES
-		je restartgame
-		jmp endgamecompletely
-	endgamecompletely:
-		exit
-
-	restartgame:
-		mov score,0 ;puts score back at zero for the beginning level
-		mov level, 1
-
-		
-		call clrscr
-		call LoadGameBoardFile
-		call drawscreen
-		call updateScore
-	
-		jmp somewhere
-
 	endof:
 		ret
 		
-
-	somewhere:
-		
-
 moveCharacter endp
+
+endGame PROC
+	INVOKE MessageBox, NULL, ADDR Messbox1,
+	ADDR MessBoxTitle1, MB_YESNO + MB_ICONQUESTION
+	cmp eax,IDYES
+	call restartGame
+	exit
+	ret
+endGame ENDP
+
+restartGame PROC
+	mov x, 1
+	mov y, 1
+	mov intendedX, 2
+	mov intendedY, 1
+	mov lastKeyPressed, 19712
+
+	mov score,0 ;puts score back at zero for the beginning level
+	mov level, 1
+
+	call clrscr
+	call LoadGameBoardFile
+	call drawscreen
+	;call updateScore
+
+	mov dl, x
+	mov dh, y
+	mov al, "@"
+	call writeToScreen	;draw pacman
+
+	ret
+restartGame endp
 
 movePacMan proc
 	;move pacmans x and y to intended x and y
@@ -472,36 +478,43 @@ updateScore proc
 		call MsgBox
 		exit
 		
-
 updateScore endp
 
 nextlevel Proc
-
-;cmp score, 21300
-cmp score, 600
-je printmessage
-jmp somewhere
-
-printmessage:
-	INVOKE MessageBox, NULL, ADDR Messbox,
-	ADDR MessBoxTitle, MB_YESNO + MB_ICONQUESTION
-	cmp eax,IDYES
-	je increaselevel
+	;cmp score, 21300
+	cmp score, 600
+	je printmessage
 	jmp somewhere
 
-increaselevel:
-	mov score,0 ;puts score back at zero for the next level
-	inc level
+	printmessage:
+		INVOKE MessageBox, NULL, ADDR Messbox,
+		ADDR MessBoxTitle, MB_YESNO + MB_ICONQUESTION
+		cmp eax,IDYES
+		je increaselevel
+		jmp somewhere
 
-	call clrscr	
-	call LoadGameBoardFile
-	call drawscreen
-	call gameLoop
-	call updateScore
+	increaselevel:
+		mov score,0 ;puts score back at zero for the next level
+		inc level
 
-somewhere:
-	ret
+		mov x, 1
+		mov y, 1
+		mov intendedX, 2
+		mov intendedY, 1
+		mov lastKeyPressed, 19712
 
+		call clrscr
+		call LoadGameBoardFile
+		call drawscreen
+		;call updateScore
+
+		mov dl, x
+		mov dh, y
+		mov al, "@"
+		call writeToScreen	;draw pacman
+
+	somewhere:
+		ret
 
 nextlevel ENDP
 
