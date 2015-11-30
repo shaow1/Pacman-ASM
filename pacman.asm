@@ -7,6 +7,19 @@ TITLE MASM Template						(main.asm)
 INCLUDE Irvine32.inc
 INCLUDE macros.inc
 
+INCLUDE macros.inc
+INCLUDELIB kernel32.lib
+INCLUDELIB user32.lib
+INCLUDELIB Winmm.lib
+
+NULL                                 equ 0
+SND_ASYNC                            equ 1h
+SND_FILENAME                         equ 20000h
+
+PlaySound PROTO STDCALL :DWORD,:DWORD,:DWORD
+ExitProcess PROTO STDCALL :DWORD
+
+
 ;---------------------------------------------------------------------------
 
 BUFFER_SIZE = (30*24)
@@ -17,9 +30,15 @@ rightKey = 19712
 downKey = 20480
 leftKey = 19200
 
-maxScore = 900; 21300
+maxScore = 20700
 
 .data
+
+	;sound
+	introfile db "C:\Users\harperm\Desktop\pacman_beginning",0
+	SoundFile db "C:\Users\harperm\Desktop\pacman_death",0 
+	chompFile db "C:\Users\harperm\Desktop\pacman_chomp",0 
+
 	;gameboard
 		boardgame BYTE BUFFER_SIZE DUP(?)
 		buffer BYTE BUFFER_SIZE DUP(?)
@@ -72,6 +91,7 @@ maxScore = 900; 21300
 .code
 
 main PROC
+	call randomize
 	call splashscreen
 
 	exit
@@ -160,6 +180,30 @@ handleKey proc
 handleKey endp
 
 ;---------------------------------------------------------------------------
+;Generate Random Holes
+generateholes PROC
+	
+	mov ecx, level
+
+	multipleholes:
+
+		mov eax, 22
+		Call RandomRange
+		mov dl, al
+		
+		mov eax, 28
+		Call RandomRange
+		mov ah,dl 
+
+		mov bl, 'O'
+		push ecx
+		Call writetoarray
+		pop ecx
+	loop multipleholes
+	ret
+generateholes ENDP
+
+;---------------------------------------------------------------------------
 ;Move Pacman Around
 
 moveCharacter proc
@@ -216,7 +260,7 @@ moveCharacter proc
 		add eax, 100
 		mov score, eax
 		call updateScore
-
+		invoke PlaySound, ADDR chompFile, NULL, SND_FILENAME or SND_ASYNC
 		call movePacMan
 		ret
 	wall:
@@ -297,6 +341,7 @@ checkScore proc
 		;otherwise exit
 		call resetBoard
 		call splashScreen
+		mov lengthOfFrame, 250
 	ret
 
 	increaselevel:
@@ -323,14 +368,16 @@ newLevel PROC
 	nextLevel:
 		mov score,0 ;puts score back at zero for the next level
 		inc level
-		mov eax, 20
+		mov eax, 50
 		sub lengthOfFrame, eax
 		call resetBoard
+		;call generateholes
 	ret
 
 newLevel ENDP
 
 endGame PROC
+	invoke PlaySound, ADDR SoundFile, NULL, SND_FILENAME or SND_ASYNC
 	INVOKE MessageBox, NULL, ADDR Messbox1,
 	ADDR MessBoxTitle1, MB_YESNO + MB_ICONQUESTION
 	cmp eax, IDYES
@@ -341,6 +388,7 @@ endGame PROC
 	startScreen:
 		call resetBoard
 		call splashScreen
+		mov lengthOfFrame, 250
 	endOf:
 	ret
 endGame ENDP
@@ -354,7 +402,6 @@ restartGame endp
 
 resetBoard PROC
 	mov score, 0
-	mov lengthOfFrame, 250
 	mov x, 1
 	mov y, 1
 	mov intendedX, 2
@@ -363,6 +410,7 @@ resetBoard PROC
 
 	call clrscr
 	call LoadGameBoardFile
+	call generateholes
 	call drawscreen
 	call updateScore
 
@@ -502,6 +550,24 @@ splashscreen PROC
 	mov eax, filehandle
 	call closefile
 
+	mov edx, 0
+	mov dh, 23
+	call Gotoxy
+	mov edx, Offset splashfile
+	call openinputfile
+	mov filehandle, eax
+	mov edx, offset buffer1
+	mov ecx, buffer_size
+	call ReadFromFile
+	mov buffer1[eax],0
+	mov edx, offset buffer1
+	mov eax,lightblue
+	call SetTextColor
+	call writestring
+	call crlf
+	mov eax, filehandle
+	call closefile
+
 
 	mov edx, 0
 	mov dh, yvalue
@@ -513,8 +579,7 @@ splashscreen PROC
 	call WriteString
 
 	call crlf
-	inc yvalue
-	mov dh, yvalue
+	mov dh, 21
 	mov dl,15
 	call Gotoxy
 	mov edx, offset CreatedBy
@@ -523,14 +588,14 @@ splashscreen PROC
 	call WriteString
 
 	call crlf
-	inc yvalue
-	mov dh, yvalue
+	mov dh, 22
 	mov dl,23
 	call Gotoxy
 	mov edx, offset NextStep
 	mov eax,cyan
 	call SetTextColor
 	call WriteString
+	invoke PlaySound, ADDR introFile, NULL, SND_FILENAME or SND_ASYNC
 	call Readint
 	mov inputnumber, eax
 
@@ -546,6 +611,7 @@ splashscreen PROC
 	beginplaying:
 		call clrscr
 		call LoadGameBoardFile
+		call generateholes
 		call drawscreen
 		call gameLoop
 		call crlf
