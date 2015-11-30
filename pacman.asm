@@ -40,7 +40,7 @@ maxScore = 900; 21300
 	
 	;game variables
 		nextTick dd 0
-		lengthOfFrame dd 200
+		lengthOfFrame dd 250
 		lastKeyPressed dw 19712
 		score dd 0
 		level dd 1
@@ -294,9 +294,9 @@ checkScore proc
 		ADDR MessBoxTitle, MB_YESNO + MB_ICONQUESTION
 		cmp eax, IDYES
 		je increaselevel	;increase level if they say yes
-
 		;otherwise exit
-		exit
+		call resetBoard
+		call splashScreen
 	ret
 
 	increaselevel:
@@ -317,12 +317,14 @@ newLevel PROC
 		mov ebx,OFFSET wincaption
 		mov edx,OFFSET winnermsg
 		call MsgBox
-		exit
+		
 	ret
 
 	nextLevel:
 		mov score,0 ;puts score back at zero for the next level
 		inc level
+		mov eax, 20
+		sub lengthOfFrame, eax
 		call resetBoard
 	ret
 
@@ -337,7 +339,8 @@ endGame PROC
 		call restartGame
 		jmp endOf
 	startScreen:
-		exit
+		call resetBoard
+		call splashScreen
 	endOf:
 	ret
 endGame ENDP
@@ -350,6 +353,8 @@ restartGame PROC
 restartGame endp
 
 resetBoard PROC
+	mov score, 0
+	mov lengthOfFrame, 250
 	mov x, 1
 	mov y, 1
 	mov intendedX, 2
@@ -477,6 +482,8 @@ writeToArray endp
 ;Splash Screen
 splashscreen PROC
 
+	call clrscr
+
 	mov edx, 0
 	mov dh, 15
 	call Gotoxy
@@ -593,7 +600,6 @@ printdirections PROC
 	call crlf
 	mov eax, filehandle
 	call closefile
-
 
 ret
 printdirections ENDP
