@@ -17,46 +17,51 @@ rightKey = 19712
 downKey = 20480
 leftKey = 19200
 
+maxScore = 900; 21300
+
 .data
-	boardgame BYTE BUFFER_SIZE DUP(?)
-	buffer BYTE BUFFER_SIZE DUP(?)
-	filename  BYTE "FinalBoardGame.txt",0
-	directionfile BYTE "DirectionFile.txt", 0
-	scoreString  BYTE "Score: ",0
-	levelString  BYTE "Level: ",0
-	wincaption  BYTE "WINNER!",0
-	winnermsg  BYTE "Congrats! You have beaten all 6 levels. You are Pac Man Camp.",0
-	fileHandle HANDLE ?
-
-	nextTick dd 0
-	lengthOfFrame dd 200
-	lastKeyPressed dw 19712
-
-	x byte 1
-	y byte 1
-	intendedX byte 2
-	intendedY byte 1
-
-	MessBoxTitle db "Level Complete",0
-	MessBox db "Level Complete: Do you wish to continute?",0 
-
-	MessBoxTitle1 db "Fail",0
-	MessBox1 db "You have fallen in a hole! Do you wish to restart?",0 
-
-	Welcome db "Welcome To the Best Pac Man Game Ever!", 0
-	CreatedBy db "Created By: Mallory Harper, Chris Chevalier, Greg Shao",0
-	NextStep db "Begin Playing (1) or Need Directions (2)? ", 0
-	directionContinue db "Now that you read the directions would you like to play? Yes (1) or No (2)?: ",0
-	invalidnumber db "Invalid Number, Please enter either 1 or 2", 0
-
-	score dd 0
-	level dd 1
-	yvalue db 20
-	xvalue db 25
-	inputnumber dd 0
-	directionumber dd 0
-	fuckyou dd 0
+	;gameboard
+		boardgame BYTE BUFFER_SIZE DUP(?)
+		buffer BYTE BUFFER_SIZE DUP(?)
+		filename  BYTE "FinalBoardGame.txt",0
+		directionfile BYTE "DirectionFile.txt", 0
+		fileHandle HANDLE ?
 	
+	;game strings
+			scoreString  BYTE "Score: ",0
+			levelString  BYTE "Level: ",0
+			wincaption  BYTE "WINNER!",0
+			winnermsg  BYTE "Congrats! You have beaten all 6 levels. You are Pac Man Camp.",0
+
+			MessBoxTitle db "Level Complete",0
+			MessBox db "Level Complete: Do you wish to continute?",0 
+
+			MessBoxTitle1 db "Fail",0
+			MessBox1 db "You have fallen in a hole! Do you wish to restart?", 0 
+	
+	;game variables
+		nextTick dd 0
+		lengthOfFrame dd 200
+		lastKeyPressed dw 19712
+		score dd 0
+		level dd 1
+
+		x byte 1
+		y byte 1
+		intendedX byte 2
+		intendedY byte 1
+
+	;splashScreen Variables
+		Welcome db "Welcome To the Best Pac Man Game Ever!", 0
+		CreatedBy db "Created By: Mallory Harper, Chris Chevalier, Greg Shao",0
+		NextStep db "Begin Playing (1) or Need Directions (2)? ", 0
+		directionContinue db "Now that you read the directions would you like to play? Yes (1) or No (2)?: ",0
+		invalidnumber db "Invalid Number, Please enter either 1 or 2", 0
+
+		yvalue db 20
+		xvalue db 25
+		inputnumber dd 0
+		directionumber dd 0
 
 ;---------------------------------------------------------------------------
 ;Main Game Logic & Loop
@@ -76,6 +81,7 @@ gameLoop proc
 		mov nextTick, eax
 		call handleKey
 		call moveCharacter
+		call checkScore
 
 		keyboardLoop:
 			call getKeyStroke
@@ -90,110 +96,6 @@ gameLoop proc
 
 	;ret
 gameLoop endp
-;-------------------------------------------------------------------------------------------
-;Splash Screen
-splashscreen PROC
-
-	mov edx, 0
-	mov dh, yvalue
-	mov dl, xvalue
-	call Gotoxy
-	mov edx, offset Welcome
-	mov eax,lightGreen
-	call SetTextColor
-	call WriteString
-
-	call crlf
-	inc yvalue
-	mov dh, yvalue
-	mov dl,15
-	call Gotoxy
-	mov edx, offset CreatedBy
-	mov eax,magenta
-	call SetTextColor
-	call WriteString
-
-	call crlf
-	inc yvalue
-	mov dh, yvalue
-	mov dl,23
-	call Gotoxy
-	mov edx, offset NextStep
-	mov eax,cyan
-	call SetTextColor
-	call WriteString
-	call Readint
-	mov inputnumber, eax
-
-	mov eax, 15 ;changes color back to normal
-	call SetTextColor
-
-	cmp inputnumber, 1
-	je beginplaying
-	cmp inputnumber, 2
-	je directions
-	jmp invalidnum
-
-	beginplaying:
-		call clrscr
-		call LoadGameBoardFile
-		call drawscreen
-		call gameLoop
-		call crlf
-		ret
-
-	directions:
-		call clrscr
-		call printdirections
-
-		mov edx, offset directionContinue
-		call WriteString
-		call Readint
-		mov directionumber, eax
-
-		cmp directionumber, 1
-		je beginplaying
-		cmp directionumber, 2
-		je quitgame
-		jmp invalidnum
-
-
-		quitgame:
-			exit
-		ret
-
-	invalidnum:
-		call clrscr
-		mov dh, 19
-		mov dl, 24
-		call Gotoxy
-		mov edx, offset invalidnumber
-		call WriteString
-		call splashscreen
-		call crlf
-
-		ret
-
-splashscreen ENDP
-
-printdirections PROC
-	
-	mov edx, Offset directionfile
-	call openinputfile
-	mov filehandle, eax
-	mov edx, offset buffer
-	mov ecx, buffer_size
-	call ReadFromFile
-	mov buffer[eax],0
-	mov edx, offset buffer
-	call writestring
-	call crlf
-	mov eax, filehandle
-	call closefile
-
-
-ret
-printdirections ENDP
 
 ;---------------------------------------------------------------------------
 ;User Input
@@ -300,7 +202,7 @@ moveCharacter proc
 		mov bl, ' '
 		call writeToArray
 		call movePacMan
-		jmp endof
+		ret
 	dot:
 		mov al, x
 		mov ah, y
@@ -311,14 +213,14 @@ moveCharacter proc
 		add eax, 100
 		mov score, eax
 		call updateScore
-		call nextlevel
 
 		call movePacMan
-		jmp endof
+		ret
 	wall:
-		jmp endof
+		ret
 	hole:
 		call endGame
+		ret
 	leftTunnel:
 		mov al, x
 		mov ah, y
@@ -327,7 +229,7 @@ moveCharacter proc
 		mov intendedX, 26
 		mov intendedY, 11
 		call movePacMan
-		jmp endof
+		ret
 	rightTunnel:
 		mov al, x
 		mov ah, y
@@ -336,43 +238,10 @@ moveCharacter proc
 		mov intendedX, 1
 		mov intendedY, 11
 		call movePacMan
-		jmp endof
-	endof:
 		ret
-		
+	
+	ret
 moveCharacter endp
-
-endGame PROC
-	INVOKE MessageBox, NULL, ADDR Messbox1,
-	ADDR MessBoxTitle1, MB_YESNO + MB_ICONQUESTION
-	cmp eax,IDYES
-	call restartGame
-	exit
-	ret
-endGame ENDP
-
-restartGame PROC
-	mov x, 1
-	mov y, 1
-	mov intendedX, 2
-	mov intendedY, 1
-	mov lastKeyPressed, 19712
-
-	mov score,0 ;puts score back at zero for the beginning level
-	mov level, 1
-
-	call clrscr
-	call LoadGameBoardFile
-	call drawscreen
-	;call updateScore
-
-	mov dl, x
-	mov dh, y
-	mov al, "@"
-	call writeToScreen	;draw pacman
-
-	ret
-restartGame endp
 
 movePacMan proc
 	;move pacmans x and y to intended x and y
@@ -407,6 +276,95 @@ writeToScreen proc
 	call writeChar
 	ret
 writeToScreen endp
+
+;---------------------------------------------------------------------------
+;Game States***
+
+checkScore proc
+	cmp score, maxScore
+	je levelComplete
+	ret
+
+	levelComplete:
+		;print message asking user if they want to move to next level
+		INVOKE MessageBox, NULL, ADDR Messbox,
+		ADDR MessBoxTitle, MB_YESNO + MB_ICONQUESTION
+		cmp eax, IDYES
+		je increaselevel	;increase level if they say yes
+
+		;otherwise exit
+		exit
+	ret
+
+	increaselevel:
+		call newLevel
+	ret
+
+checkScore endp
+
+newLevel PROC
+	;check if last level
+	mov eax, level
+	cmp eax, 7
+	je levelscomplete
+	jmp nextLevel
+
+
+	levelscomplete:	;if youv complete all levels
+		mov ebx,OFFSET wincaption
+		mov edx,OFFSET winnermsg
+		call MsgBox
+		exit
+	ret
+
+	nextLevel:
+		mov score,0 ;puts score back at zero for the next level
+		inc level
+		call resetBoard
+	ret
+
+newLevel ENDP
+
+endGame PROC
+	INVOKE MessageBox, NULL, ADDR Messbox1,
+	ADDR MessBoxTitle1, MB_YESNO + MB_ICONQUESTION
+	cmp eax, IDYES
+	jnz startScreen
+	restartGame:
+		call restartGame
+		jmp endOf
+	startScreen:
+		exit
+	endOf:
+	ret
+endGame ENDP
+
+restartGame PROC
+	mov score, 0 ;puts score back at zero for the beginning level
+	mov level, 1
+	call resetBoard
+	ret
+restartGame endp
+
+resetBoard PROC
+	mov x, 1
+	mov y, 1
+	mov intendedX, 2
+	mov intendedY, 1
+	mov lastKeyPressed, 19712
+
+	call clrscr
+	call LoadGameBoardFile
+	call drawscreen
+	call updateScore
+
+	mov dl, x
+	mov dh, y
+	mov al, "@"
+	call writeToScreen	;draw pacman
+
+	ret
+resetBoard endp
 
 ;---------------------------------------------------------------------------
 ;Gameboard Loading, Displaying & Score
@@ -454,6 +412,7 @@ drawScreen proc
 drawScreen endp
 
 updateScore proc
+	;score
 	mov dl, 0
 	mov dh, 25
 	call gotoxy
@@ -461,6 +420,8 @@ updateScore proc
 	call WriteString
 	mov eax, score
 	call writedec
+
+	;level
 	mov dl, 0
 	mov dh, 24
 	call gotoxy
@@ -468,55 +429,9 @@ updateScore proc
 	call WriteString
 	mov eax, level
 	call writedec
-	cmp eax, 7
-	je levelscomplete
-	ret
 
-	levelscomplete:
-		mov ebx,OFFSET wincaption
-		mov edx,OFFSET winnermsg
-		call MsgBox
-		exit
-		
+	ret		
 updateScore endp
-
-nextlevel Proc
-	;cmp score, 21300
-	cmp score, 600
-	je printmessage
-	jmp somewhere
-
-	printmessage:
-		INVOKE MessageBox, NULL, ADDR Messbox,
-		ADDR MessBoxTitle, MB_YESNO + MB_ICONQUESTION
-		cmp eax,IDYES
-		je increaselevel
-		jmp somewhere
-
-	increaselevel:
-		mov score,0 ;puts score back at zero for the next level
-		inc level
-
-		mov x, 1
-		mov y, 1
-		mov intendedX, 2
-		mov intendedY, 1
-		mov lastKeyPressed, 19712
-
-		call clrscr
-		call LoadGameBoardFile
-		call drawscreen
-		;call updateScore
-
-		mov dl, x
-		mov dh, y
-		mov al, "@"
-		call writeToScreen	;draw pacman
-
-	somewhere:
-		ret
-
-nextlevel ENDP
 
 ;---------------------------------------------------------------------------
 ;Gameboard Array Procedures
@@ -554,6 +469,110 @@ writeToArray proc
 	mov [esi], bl
 	ret
 writeToArray endp
+
+;-------------------------------------------------------------------------------------------
+;Splash Screen
+splashscreen PROC
+	call clrscr
+
+	mov edx, 0
+	mov dh, yvalue
+	mov dl, xvalue
+	call Gotoxy
+	mov edx, offset Welcome
+	mov eax,lightGreen
+	call SetTextColor
+	call WriteString
+
+	call crlf
+	inc yvalue
+	mov dh, yvalue
+	mov dl,15
+	call Gotoxy
+	mov edx, offset CreatedBy
+	mov eax,magenta
+	call SetTextColor
+	call WriteString
+
+	call crlf
+	inc yvalue
+	mov dh, yvalue
+	mov dl,23
+	call Gotoxy
+	mov edx, offset NextStep
+	mov eax,cyan
+	call SetTextColor
+	call WriteString
+	call Readint
+	mov inputnumber, eax
+
+	mov eax, 15 ;changes color back to normal
+	call SetTextColor
+
+	cmp inputnumber, 1
+	je beginplaying
+	cmp inputnumber, 2
+	je directions
+	jmp invalidnum
+
+	beginplaying:
+		call clrscr
+		call LoadGameBoardFile
+		call drawscreen
+		call gameLoop
+		call crlf
+		ret
+
+	directions:
+		call clrscr
+		call printdirections
+
+		mov edx, offset directionContinue
+		call WriteString
+		call Readint
+		mov directionumber, eax
+
+		cmp directionumber, 1
+		je beginplaying
+		cmp directionumber, 2
+		je quitgame
+		jmp invalidnum
+
+
+		quitgame:
+			exit
+		ret
+
+	invalidnum:
+		call clrscr
+		mov dh, 19
+		mov dl, 24
+		call Gotoxy
+		mov edx, offset invalidnumber
+		call WriteString
+		call splashscreen
+		call crlf
+
+		ret
+splashscreen ENDP
+
+printdirections PROC
+	
+	mov edx, Offset directionfile
+	call openinputfile
+	mov filehandle, eax
+	mov edx, offset buffer
+	mov ecx, buffer_size
+	call ReadFromFile
+	mov buffer[eax],0
+	mov edx, offset buffer
+	call writestring
+	call crlf
+	mov eax, filehandle
+	call closefile
+
+	ret
+printdirections ENDP
 
 ;---------------------------------------------------------------------------
 
