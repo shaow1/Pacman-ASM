@@ -20,8 +20,10 @@ leftKey = 19200
 .data
 	boardgame BYTE BUFFER_SIZE DUP(?)
 	buffer BYTE BUFFER_SIZE DUP(?)
+	buffer1 BYTE BUFFER_SIZE DUP(?)
 	filename  BYTE "FinalBoardGame.txt",0
 	directionfile BYTE "DirectionFile.txt", 0
+	splashfile BYTE "asciipacmanart.txt",0
 	scoreString  BYTE "Score: ",0
 	levelString  BYTE "Level: ",0
 	wincaption  BYTE "WINNER!",0
@@ -93,6 +95,24 @@ gameLoop endp
 ;-------------------------------------------------------------------------------------------
 ;Splash Screen
 splashscreen PROC
+
+	mov edx, 0
+	mov dh, 15
+	call Gotoxy
+	mov edx, Offset splashfile
+	call openinputfile
+	mov filehandle, eax
+	mov edx, offset buffer1
+	mov ecx, buffer_size
+	call ReadFromFile
+	mov buffer1[eax],0
+	mov edx, offset buffer1
+	mov eax,lightblue
+	call SetTextColor
+	call writestring
+	call crlf
+	mov eax, filehandle
+	call closefile
 
 
 	mov edx, 0
@@ -174,6 +194,7 @@ splashscreen PROC
 		call crlf
 
 		ret
+
 
 splashscreen ENDP
 
@@ -477,8 +498,8 @@ updateScore endp
 
 nextlevel Proc
 
-;cmp score, 21300
-cmp score, 600
+cmp score, 21300
+;cmp score, 600
 je printmessage
 jmp somewhere
 
