@@ -83,9 +83,9 @@ maxScore = 20700
 		m1Direction dw 0
 
 		m2X byte 14
-		m2Y byte 10
+		m2Y byte 9
 		m2IntendedX byte 14
-		m2IntendedY byte 19
+		m2IntendedY byte 8
 		m2Direction dw 0
 
 	;splashScreen Variables
@@ -460,9 +460,9 @@ reinitGhosts PROC
 	mov m1IntendedY, 10
 
 	mov m2X, 14
-	mov m2Y, 11
+	mov m2Y, 9
 	mov m2IntendedX, 14
-	mov m2IntendedY, 10
+	mov m2IntendedY, 8
 
 	ret
 reinitGhosts endp
