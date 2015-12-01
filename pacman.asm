@@ -33,11 +33,10 @@ leftKey = 19200
 maxScore = 20700
 
 .data
-
 	;sound
-	introfile db "C:\Users\harperm\Desktop\pacman_beginning",0
-	SoundFile db "C:\Users\harperm\Desktop\pacman_death",0 
-	chompFile db "C:\Users\harperm\Desktop\pacman_chomp",0 
+		introfile db "pacman_beginning",0
+		SoundFile db "pacman_death",0 
+		chompFile db "pacman_chomp",0 
 
 	;gameboard
 		boardgame BYTE BUFFER_SIZE DUP(?)
@@ -46,16 +45,16 @@ maxScore = 20700
 		fileHandle HANDLE ?
 	
 	;game strings
-			scoreString  BYTE "Score: ",0
-			levelString  BYTE "Level: ",0
-			wincaption  BYTE "WINNER!",0
-			winnermsg  BYTE "Congrats! You have beaten all 6 levels. You are Pac Man Camp.",0
+		scoreString  BYTE "Score: ",0
+		levelString  BYTE "Level: ",0
+		wincaption  BYTE "WINNER!",0
+		winnermsg  BYTE "Congrats! You have beaten all 6 levels. You are Pac Man Camp.",0
 
-			MessBoxTitle db "Level Complete",0
-			MessBox db "Level Complete: Do you wish to continute?",0 
+		MessBoxTitle db "Level Complete",0
+		MessBox db "Level Complete: Do you wish to continute?",0 
 
-			MessBoxTitle1 db "Fail",0
-			MessBox1 db "You have fallen in a hole! Do you wish to restart?", 0 
+		MessBoxTitle1 db "Fail",0
+		MessBox1 db "You have fallen in a hole! Do you wish to restart?", 0 
 	
 	;game variables
 		nextTick dd 0
@@ -64,10 +63,18 @@ maxScore = 20700
 		score dd 0
 		level dd 1
 
+	;charachter variable
 		x byte 1
 		y byte 1
 		intendedX byte 2
 		intendedY byte 1
+
+	;monster variable
+		mX byte 14
+		mY byte 11
+		mIntendedX byte 14
+		mIntendedY byte 10
+		mDirection dw 0
 
 	;splashScreen Variables
 		buffer1 BYTE BUFFER_SIZE DUP(?)
@@ -104,6 +111,7 @@ gameLoop proc
 		mov nextTick, eax
 		call handleKey
 		call moveCharacter
+		call ghostUpdate
 		call checkScore
 
 		keyboardLoop:
@@ -371,7 +379,6 @@ newLevel PROC
 		mov eax, 50
 		sub lengthOfFrame, eax
 		call resetBoard
-		;call generateholes
 	ret
 
 newLevel ENDP
@@ -410,7 +417,6 @@ resetBoard PROC
 
 	call clrscr
 	call LoadGameBoardFile
-	call generateholes
 	call drawscreen
 	call updateScore
 
@@ -421,6 +427,98 @@ resetBoard PROC
 
 	ret
 resetBoard endp
+
+;---------------------------------------------------------------------------
+;Ghost Logic
+
+ghostUpdate PROC
+	;check for free direction recurrsivly
+	
+	mov cl, mX
+	mov ch, mY
+
+	mov ax, mDirection
+
+	mov bx, 0
+	cmp bx, ax
+	jz up
+
+	mov bx, 1
+	cmp bx, ax
+	jz right
+	
+	mov bx, 2
+	cmp bx, ax
+	jz down
+
+	mov bx, 3
+	cmp bx, ax
+	jz left
+
+	up:
+		dec ch
+		jmp endOf
+	right:
+		inc cl
+		jmp endOf
+	down:
+		inc ch
+		jmp endOf
+	left:
+		dec cl
+		jmp endOf
+	endOf:
+
+	mov  mIntendedX, cl
+	mov  mIntendedY, ch
+
+	mov al, cl
+	mov ah, ch
+	call readarray	;reads array to determine material of next intended position. Returns char in al
+
+	mov bl, ' '
+	cmp al, bl
+	jz free
+
+	mov bl, '.'
+	cmp al, bl
+	jz free
+
+	mov bl, '@'
+	cmp al, bl
+	jz pacman
+
+	jmp wall	;else not free wall
+
+	free:
+		call moveGhost
+		ret
+	wall:
+		mov eax, 4
+		Call RandomRange
+		mov mDirection, ax
+
+		call ghostUpdate
+		ret
+	pacman:
+		call endGame
+ghostUpdate endp
+
+moveGhost PROC
+		mov dl, mX
+		mov dh, mY
+
+		call writeToScreen	;clear last position ghost
+
+		mov dl, mIntendedX
+		mov dh, mIntendedY
+		mov al, "O"
+		call writeToScreen	;draw ghost
+
+		mov mX, dl	;update cordinates
+		mov mY, dh
+	ret
+moveGhost endp
 
 ;---------------------------------------------------------------------------
 ;Gameboard Loading, Displaying & Score
@@ -611,7 +709,6 @@ splashscreen PROC
 	beginplaying:
 		call clrscr
 		call LoadGameBoardFile
-		call generateholes
 		call drawscreen
 		call gameLoop
 		call crlf
@@ -632,7 +729,6 @@ splashscreen PROC
 		je quitgame
 		jmp invalidnum
 
-
 		quitgame:
 			exit
 		ret
@@ -648,7 +744,6 @@ splashscreen PROC
 		call crlf
 
 		ret
-
 
 splashscreen ENDP
 
