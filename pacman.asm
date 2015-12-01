@@ -30,7 +30,7 @@ rightKey = 19712
 downKey = 20480
 leftKey = 19200
 
-maxScore = 21400
+maxScore = 20700
 
 .data
 	;sound
@@ -54,7 +54,7 @@ maxScore = 21400
 		MessBox db "Level Complete: Do you wish to continute?",0 
 
 		MessBoxTitle1 db "Fail",0
-		MessBox1 db "You have fallen in a hole! Do you wish to restart?", 0 
+		MessBox1 db "You have been eaten by a ghost. Do you wish to restart?", 0 
 	
 	;game variables
 		nextTick dd 0
@@ -75,6 +75,18 @@ maxScore = 21400
 		mIntendedX byte 14
 		mIntendedY byte 10
 		mDirection dw 0
+
+		m1X byte 13
+		m1Y byte 11
+		m1IntendedX byte 13
+		m1IntendedY byte 10
+		m1Direction dw 0
+
+		m2X byte 14
+		m2Y byte 10
+		m2IntendedX byte 14
+		m2IntendedY byte 19
+		m2Direction dw 0
 
 	;splashScreen Variables
 		buffer1 BYTE BUFFER_SIZE DUP(?)
@@ -112,6 +124,8 @@ gameLoop proc
 		call handleKey
 		call moveCharacter
 		call ghostUpdate
+		call ghost1Update
+		call ghost2Update
 		call checkScore
 
 		keyboardLoop:
@@ -348,6 +362,7 @@ checkScore proc
 		je increaselevel	;increase level if they say yes
 		;otherwise exit
 		call resetBoard
+		call reinitGhosts
 		call splashScreen
 		mov lengthOfFrame, 250
 	ret
@@ -394,6 +409,7 @@ endGame PROC
 		jmp endOf
 	startScreen:
 		call resetBoard
+		call reinitGhosts
 		call splashScreen
 		mov lengthOfFrame, 250
 	endOf:
@@ -404,6 +420,7 @@ restartGame PROC
 	mov score, 0 ;puts score back at zero for the beginning level
 	mov level, 1
 	call resetBoard
+	call reinitGhosts
 	ret
 restartGame endp
 
@@ -430,6 +447,25 @@ resetBoard endp
 
 ;---------------------------------------------------------------------------
 ;Ghost Logic
+
+reinitGhosts PROC
+	mov mX, 14
+	mov mY, 11
+	mov mIntendedX, 14
+	mov mIntendedY, 10
+
+	mov m1X, 14
+	mov m1Y, 11
+	mov m1IntendedX, 14
+	mov m1IntendedY, 10
+
+	mov m2X, 14
+	mov m2Y, 11
+	mov m2IntendedX, 14
+	mov m2IntendedY, 10
+
+	ret
+reinitGhosts endp
 
 ghostUpdate PROC
 	;check for free direction recurrsivly
@@ -520,6 +556,183 @@ moveGhost PROC
 	ret
 moveGhost endp
 
+ghost1Update PROC
+	;check for free direction recurrsivly
+	
+	mov cl, m1X
+	mov ch, m1Y
+
+	mov ax, m1Direction
+
+	mov bx, 0
+	cmp bx, ax
+	jz up
+
+	mov bx, 1
+	cmp bx, ax
+	jz right
+	
+	mov bx, 2
+	cmp bx, ax
+	jz down
+
+	mov bx, 3
+	cmp bx, ax
+	jz left
+
+	up:
+		dec ch
+		jmp endOf
+	right:
+		inc cl
+		jmp endOf
+	down:
+		inc ch
+		jmp endOf
+	left:
+		dec cl
+		jmp endOf
+	endOf:
+
+	mov  m1IntendedX, cl
+	mov  m1IntendedY, ch
+
+	mov al, cl
+	mov ah, ch
+	call readarray	;reads array to determine material of next intended position. Returns char in al
+
+	mov bl, ' '
+	cmp al, bl
+	jz free
+
+	mov bl, '.'
+	cmp al, bl
+	jz free
+
+	mov bl, '@'
+	cmp al, bl
+	jz pacman
+
+	jmp wall	;else not free wall
+
+	free:
+		call move1Ghost
+		ret
+	wall:
+		mov eax, 4
+		Call RandomRange
+		mov m1Direction, ax
+
+		call ghost1Update
+		ret
+	pacman:
+		call endGame
+ghost1Update endp
+
+move1Ghost PROC
+		mov dl, m1X
+		mov dh, m1Y
+
+		call writeToScreen	;clear last position ghost
+
+		mov dl, m1IntendedX
+		mov dh, m1IntendedY
+		mov al, "O"
+		call writeToScreen	;draw ghost
+
+		mov m1X, dl	;update cordinates
+		mov m1Y, dh
+	ret
+move1Ghost endp
+
+ghost2Update PROC
+	;check for free direction recurrsivly
+	
+	mov cl, m2X
+	mov ch, m2Y
+
+	mov ax, m2Direction
+
+	mov bx, 0
+	cmp bx, ax
+	jz up
+
+	mov bx, 1
+	cmp bx, ax
+	jz right
+	
+	mov bx, 2
+	cmp bx, ax
+	jz down
+
+	mov bx, 3
+	cmp bx, ax
+	jz left
+
+	up:
+		dec ch
+		jmp endOf
+	right:
+		inc cl
+		jmp endOf
+	down:
+		inc ch
+		jmp endOf
+	left:
+		dec cl
+		jmp endOf
+	endOf:
+
+	mov  m2IntendedX, cl
+	mov  m2IntendedY, ch
+
+	mov al, cl
+	mov ah, ch
+	call readarray	;reads array to determine material of next intended position. Returns char in al
+
+	mov bl, ' '
+	cmp al, bl
+	jz free
+
+	mov bl, '.'
+	cmp al, bl
+	jz free
+
+	mov bl, '@'
+	cmp al, bl
+	jz pacman
+
+	jmp wall	;else not free wall
+
+	free:
+		call move2Ghost
+		ret
+	wall:
+		mov eax, 4
+		Call RandomRange
+		mov m2Direction, ax
+
+		call ghost2Update
+		ret
+	pacman:
+		call endGame
+ghost2Update endp
+
+move2Ghost PROC
+		mov dl, m2X
+		mov dh, m2Y
+
+		call writeToScreen	;clear last position ghost
+
+		mov dl, m2IntendedX
+		mov dh, m2IntendedY
+		mov al, "O"
+		call writeToScreen	;draw ghost
+
+		mov m2X, dl	;update cordinates
+		mov m2Y, dh
+	ret
+move2Ghost endp
 ;---------------------------------------------------------------------------
 ;Gameboard Loading, Displaying & Score
 
