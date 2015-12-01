@@ -30,7 +30,7 @@ rightKey = 19712
 downKey = 20480
 leftKey = 19200
 
-maxScore = 20700
+maxScore = 21400
 
 .data
 	;sound
